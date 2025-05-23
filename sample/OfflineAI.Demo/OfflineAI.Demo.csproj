@@ -8,6 +8,76 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Models\ggml-base.dll" />
+    <None Remove="Models\ggml-cpu-alderlake.dll" />
+    <None Remove="Models\ggml-cpu-haswell.dll" />
+    <None Remove="Models\ggml-cpu-icelake.dll" />
+    <None Remove="Models\ggml-cpu-sandybridge.dll" />
+    <None Remove="Models\ggml-cpu-sapphirerapids.dll" />
+    <None Remove="Models\ggml-cpu-skylakex.dll" />
+    <None Remove="Models\ggml-cpu-sse42.dll" />
+    <None Remove="Models\ggml-cpu-x64.dll" />
+    <None Remove="Models\ggml-rpc.dll" />
+    <None Remove="Models\ggml.dll" />
+    <None Remove="Models\libcurl-x64.dll" />
+    <None Remove="Models\llama-cli.exe" />
+    <None Remove="Models\llama.dll" />
+    <None Remove="Models\mtmd_shared.dll" />
+    <None Remove="Models\tinyllama-1.1b-chat-v1.0.Q8_0.gguf" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Models\ggml-base.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Models\ggml-cpu-alderlake.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Models\ggml-cpu-haswell.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Models\ggml-cpu-icelake.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Models\ggml-cpu-sandybridge.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Models\ggml-cpu-sapphirerapids.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Models\ggml-cpu-skylakex.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Models\ggml-cpu-sse42.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Models\ggml-cpu-x64.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Models\ggml-rpc.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Models\ggml.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Models\libcurl-x64.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Models\llama-cli.exe">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Models\llama.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Models\mtmd_shared.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Models\tinyllama-1.1b-chat-v1.0.Q8_0.gguf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\src\OfflineAI\OfflineAI.csproj" />
   </ItemGroup>
 
