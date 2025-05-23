@@ -361,3 +361,20 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+/sample/OfflineAI.Demo/Models/ggml-base.dll
+/sample/OfflineAI.Demo/Models/ggml-cpu-alderlake.dll
+/sample/OfflineAI.Demo/Models/ggml-cpu-haswell.dll
+/sample/OfflineAI.Demo/Models/ggml-cpu-icelake.dll
+/sample/OfflineAI.Demo/Models/ggml-cpu-sandybridge.dll
+/sample/OfflineAI.Demo/Models/ggml-cpu-sapphirerapids.dll
+/sample/OfflineAI.Demo/Models/ggml-cpu-skylakex.dll
+/sample/OfflineAI.Demo/Models/ggml-cpu-sse42.dll
+/sample/OfflineAI.Demo/Models/ggml-cpu-x64.dll
+/sample/OfflineAI.Demo/Models/ggml-rpc.dll
+/sample/OfflineAI.Demo/Models/ggml.dll
+/sample/OfflineAI.Demo/Models/libcurl-x64.dll
+/sample/OfflineAI.Demo/Models/llama-cli.exe
+/sample/OfflineAI.Demo/Models/llama.dll
+/sample/OfflineAI.Demo/Models/mtmd_shared.dll
+/sample/OfflineAI.Demo/Models/tinyllama-1.1b-chat-v1.0.Q8_0.gguf
+/src/OfflineAI/OfflineAI.csproj
