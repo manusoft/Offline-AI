@@ -1,180 +1,147 @@
-﻿using System.Diagnostics;
+﻿using OfflineAI.Extensions;
+using System.Diagnostics;
 using System.Text;
 
 namespace OfflineAI;
 
-
-//public class OfflineAIModel : IOfflineAIModel
-//{
-//    private readonly string modelPath;
-//    private readonly string executablePath;
-//    private readonly TimeSpan timeout;
-
-//    public OfflineAIModel(
-//        string modelPath,
-//        string executablePath = "llama-cli.exe",
-//        TimeSpan? timeout = null)
-//    {
-//        this.modelPath = modelPath;
-//        this.executablePath = executablePath;
-//        this.timeout = timeout ?? TimeSpan.FromSeconds(30); // default timeout
-//    }
-
-//    public async Task<string> GenerateTextAsync(string prompt, int maxTokens = 1024)
-//    {
-//        prompt = prompt.Replace("\"", "'");
-
-//        var psi = new ProcessStartInfo
-//        {
-//            FileName = executablePath,
-//            Arguments = $"--model \"{modelPath}\" --prompt \"{prompt}\" --n-predict {maxTokens}",
-//            RedirectStandardOutput = true,
-//            RedirectStandardError = true,
-//            UseShellExecute = false,
-//            CreateNoWindow = true
-//        };
-
-//        var output = new StringBuilder();
-//        var error = new StringBuilder();
-
-//        using var process = new Process { StartInfo = psi };
-
-//        process.OutputDataReceived += (_, e) => { if (e.Data != null) output.AppendLine(e.Data); };
-//        process.ErrorDataReceived += (_, e) => { if (e.Data != null) error.AppendLine(e.Data); };
-
-//        try
-//        {
-//            process.Start();
-//            process.BeginOutputReadLine();
-//            process.BeginErrorReadLine();
-
-//            using var cts = new CancellationTokenSource(timeout);
-
-//            var taskCompletionSource = new TaskCompletionSource<bool>();
-//            _ = Task.Run(() =>
-//            {
-//                process.WaitForExit();
-//                taskCompletionSource.TrySetResult(true);
-//            });
-
-//            if (await Task.WhenAny(taskCompletionSource.Task, Task.Delay(Timeout.Infinite, cts.Token)) == taskCompletionSource.Task)
-//            {
-//                // Completed
-//            }
-//            else
-//            {
-//                // Timeout
-//                if (!process.HasExited)
-//                {
-//                    process.Kill(true);
-//                }
-//            }
-
-//            var fullOutput = output.ToString();
-
-//            // Extract answer from <|assistant|> to the next prompt symbol or EOF
-//            var assistantTag = "<|assistant|>";
-//            var start = fullOutput.IndexOf(assistantTag);
-//            if (start >= 0)
-//            {
-//                start += assistantTag.Length;
-//                var end = fullOutput.IndexOf("<|", start); // optionally stop before next tag
-//                if (end == -1) end = fullOutput.Length;
-
-//                var answer = fullOutput.Substring(start, end - start).Trim();
-//                return answer;
-//            }
-
-//            return $"[FAILED TO PARSE]\n{fullOutput}\n{error}";
-//        }
-//        catch (Exception ex)
-//        {
-//            return $"[EXCEPTION] {ex.Message}\n{error}";
-//        }
-//    }
-
-//    // Synchronous wrapper if needed
-//    public string GenerateText(string prompt, int maxTokens = 1024)
-//    {
-//        return GenerateTextAsync(prompt, maxTokens).GetAwaiter().GetResult();
-//    }
-//}
-
-
 public class OfflineAIModel : IOfflineAIModel
 {
-    private readonly string modelPath;
-    private readonly string executablePath;
+    private readonly string _modelPath;
+    private readonly string _executablePath;
 
-    public OfflineAIModel(
-        string modelPath,
-        string executablePath = "llama-cli.exe")
+    public OfflineAIModel(string modelPath, string executablePath = "llama-cli.exe")
     {
-        this.modelPath = modelPath;
-        this.executablePath = executablePath;
+        _modelPath = modelPath;
+        _executablePath = executablePath;
     }
 
-    public string GenerateText(string prompt, int maxTokens = 1024)
+    public async Task<string> GenerateTextAsync(string prompt,
+                                                Action<string>? onToken = null,
+                                                int maxTokens = 1024,
+                                                CancellationToken cancellationToken = default)
     {
         prompt = prompt.Replace("\"", "'");
 
+        // Format the prompt correctly for TinyLlama's chat template
+        string formattedPrompt = $"<|user|>\n{prompt}<|assistant|>\n";
+
         var psi = new ProcessStartInfo
         {
-            FileName = executablePath,
-            Arguments = $"--model \"{modelPath}\" --prompt \"{prompt}\" --n-predict {maxTokens}",
+            FileName = _executablePath,
+            Arguments =
+                $"--model \"{_modelPath}\" " +
+                $"--prompt \"{formattedPrompt}\" " +
+                $"--n-predict {maxTokens} " +
+                $"--reverse-prompt \"<|user|>\" " +
+                $"--no-display-prompt ",
             RedirectStandardOutput = true,
             RedirectStandardError = true,
             UseShellExecute = false,
-            CreateNoWindow = true
+            CreateNoWindow = true,
+            StandardOutputEncoding = Encoding.UTF8,
+            StandardErrorEncoding = Encoding.UTF8
         };
 
-        var output = new StringBuilder();
-        var error = new StringBuilder();
+        var responseBuilder = new StringBuilder();
+        var errorBuilder = new StringBuilder();
 
-        using var process = new Process { StartInfo = psi };
+        using var process = new Process
+        {
+            StartInfo = psi,
+            EnableRaisingEvents = true
+        };
 
-        process.OutputDataReceived += (_, e) => { if (e.Data != null) output.AppendLine(e.Data); };
-        process.ErrorDataReceived += (_, e) => { if (e.Data != null) error.AppendLine(e.Data); };
+        process.Start();
+
+        var outputTask = Task.Run(async () =>
+        {
+            char[] buffer = new char[1];
+
+            while (true)
+            {
+                if (cancellationToken.IsCancellationRequested)
+                {
+                    process.KillTree();
+                    throw new OperationCanceledException(cancellationToken);
+                }
+
+                int read = await process.StandardOutput.ReadAsync(buffer, 0, 1);
+                if (read <= 0)
+                    break;
+
+                string token = new string(buffer, 0, read);
+                responseBuilder.Append(token);
+
+                string currentResponse = responseBuilder.ToString();
+
+                if (currentResponse.Contains(">"))
+                {
+                    process.KillTree();
+                    break;
+                };
+
+                // If we detect the start of the end-turn template token, kill the engine early
+                if (currentResponse.Contains("<|user|>"))
+                {
+                    process.KillTree();
+                    break;
+                }
+
+                // Don't leak layout brackets into the UI display action
+                if (token == "<" && "<|user|>".StartsWith(token)) continue;
+                if (token == "|" && currentResponse.EndsWith("<|")) continue;
+                if (token == "u" && currentResponse.EndsWith("<|u")) continue;
+
+                onToken?.Invoke(token);
+            }
+        }, cancellationToken);
+
+        var errorTask = Task.Run(async () =>
+        {
+            try
+            {
+                while (!process.StandardError.EndOfStream)
+                {
+                    var line = await process.StandardError.ReadLineAsync();
+                    if (!string.IsNullOrWhiteSpace(line))
+                    {
+                        errorBuilder.AppendLine(line);
+                    }
+                }
+            }
+            catch { /* Suppress stream errors during execution kill */ }
+        }, cancellationToken);
 
         try
         {
-            process.Start();
-            process.BeginOutputReadLine();
-            process.BeginErrorReadLine();
-
-            // Wait 5 seconds for output then kill
-            Thread.Sleep(15000);
-
-            if (!process.HasExited)
-            {
-                process.Kill(true);
-            }
-
-            var fullOutput = output.ToString();
-
-            // Extract answer from <|assistant|> to the next prompt symbol or EOF
-            var assistantTag = "<|assistant|>";
-            var start = fullOutput.IndexOf(assistantTag);
-            if (start >= 0)
-            {
-                start += assistantTag.Length;
-                var end = fullOutput.IndexOf("<|", start); // optionally stop before next tag
-                if (end == -1) end = fullOutput.Length;
-
-                var answer = fullOutput.Substring(start, end - start).Trim();
-                return answer;
-            }
-
-            return $"[FAILED TO PARSE]\n{fullOutput}\n{error}";
+            await Task.WhenAll(outputTask, errorTask, process.WaitForExitAsync(cancellationToken));
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            return $"[EXCEPTION] {ex.Message}";
-        }
-    }
+            if (!process.HasExited) process.KillTree();
 
-    public async Task<string> GenerateTextAsync(string prompt, int maxTokens = 100)
-    {
-        return await Task.Run(() => GenerateText(prompt, maxTokens));
+            if (cancellationToken.IsCancellationRequested)
+            {
+                throw new OperationCanceledException(cancellationToken);
+            }
+
+            throw;
+        }
+
+        //string finalResult = responseBuilder.ToString().Replace("<|user|>", "").Trim();
+
+        //if (process.ExitCode != 0 && responseBuilder.Length == 0)
+        //{
+        //    return $"[ERROR]\n{errorBuilder}";
+        //}
+
+        string finalResult = responseBuilder.ToString().Replace("<|user|>", "").Replace("<", "").Replace(">", "").Trim();
+
+        if (process.ExitCode != 0 && responseBuilder.Length == 0)
+        {
+            return $"[ERROR]\n{errorBuilder}";
+        }
+
+        return finalResult;
     }
 }
