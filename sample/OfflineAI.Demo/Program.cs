@@ -49,15 +49,7 @@ while (true)
             continue;
     }
 
-    Console.WriteLine();
-
-    Console.ForegroundColor = ConsoleColor.Green;
-    Console.Write("AI");
-    Console.ResetColor();
-    Console.WriteLine(" >");
-
-    var sw = Stopwatch.StartNew();
-    int characters = 0;
+    Console.WriteLine();   
 
     // Set up cancellation for this specific generation run
     using var cts = new CancellationTokenSource();
@@ -69,6 +61,31 @@ while (true)
     };
     Console.CancelKeyPress += cancelHandler;
 
+
+    bool isThinking = true;
+    bool firstToken = true;
+
+    // Spinner
+    var spinnerTask = Task.Run(async () =>
+    {
+        string[] frames = { "⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏" };
+        int i = 0;
+        while (isThinking && !cts.IsCancellationRequested)
+        {
+            Console.ForegroundColor = ConsoleColor.DarkGray;
+            Console.Write($"\rAI > {frames[i++ % frames.Length]} Thinking...");
+            Console.ResetColor();
+            await Task.Delay(80);
+        }
+    });
+
+    Console.ForegroundColor = ConsoleColor.Green;
+    Console.Write("AI > ");
+    Console.ResetColor();
+
+    var sw = Stopwatch.StartNew();
+    int characters = 0;
+
     try
     {
         // Pass the token to your library method (assuming OfflineAI supports CancellationToken)
@@ -76,11 +93,21 @@ while (true)
             question,
             token =>
             {
-                Console.ForegroundColor = ConsoleColor.White;
-                Console.Write(token);
-                Console.ResetColor();
+                if(firstToken)
+                {
+                    // Clear the "Thinking..." line on the first token
+                    Console.ForegroundColor = ConsoleColor.Green;
+                    Console.Write("\r" + new string(' ', Console.WindowWidth - 25) + "\rAI > ");
+                    Console.ResetColor();
+                    firstToken = false;
+                    isThinking = false;
+                }
 
-                characters += token.Length;
+                    Console.ForegroundColor = ConsoleColor.White;
+                    Console.Write(token);
+                    Console.ResetColor();
+
+                    characters += token.Length;               
             },
             cancellationToken: cts.Token); // <--- Passing the cancellation token here
     }
