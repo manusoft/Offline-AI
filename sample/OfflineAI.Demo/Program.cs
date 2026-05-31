@@ -2,6 +2,8 @@
 using System.Diagnostics;
 using System.Text;
 
+var tinyModelPath = "Models/tinyllama-1.1b-chat-v1.0.Q8_0.gguf";
+
 Console.OutputEncoding = Encoding.UTF8;
 Console.Title = "OfflineAI Demo";
 Console.Clear();
@@ -11,9 +13,7 @@ Console.CancelKeyPress += (sender, e) => e.Cancel = true;
 
 DrawBanner();
 
-var model = new OfflineAIModel(
-    "Models/tinyllama-1.1b-chat-v1.0.Q8_0.gguf",
-    "Models/llama-cli.exe");
+var model = new OfflineAIModel(tinyModelPath, "Models/llama-cli.exe");
 
 Console.ForegroundColor = ConsoleColor.DarkGray;
 Console.WriteLine("Model : TinyLlama 1.1B");
@@ -49,7 +49,7 @@ while (true)
             continue;
     }
 
-    Console.WriteLine();   
+    Console.WriteLine();
 
     // Set up cancellation for this specific generation run
     using var cts = new CancellationTokenSource();
@@ -93,7 +93,7 @@ while (true)
             question,
             token =>
             {
-                if(firstToken)
+                if (firstToken)
                 {
                     // Clear the "Thinking..." line on the first token
                     Console.ForegroundColor = ConsoleColor.Green;
@@ -103,11 +103,11 @@ while (true)
                     isThinking = false;
                 }
 
-                    Console.ForegroundColor = ConsoleColor.White;
-                    Console.Write(token);
-                    Console.ResetColor();
+                Console.ForegroundColor = ConsoleColor.White;
+                Console.Write(token);
+                Console.ResetColor();
 
-                    characters += token.Length;               
+                characters += token.Length;
             },
             cancellationToken: cts.Token); // <--- Passing the cancellation token here
     }
