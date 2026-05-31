@@ -378,3 +378,4 @@ FodyWeavers.xsd
 /sample/OfflineAI.Demo/Models/mtmd_shared.dll
 /sample/OfflineAI.Demo/Models/tinyllama-1.1b-chat-v1.0.Q8_0.gguf
 /src/OfflineAI/OfflineAI.csproj
+/sample/OfflineAI.Demo/Models/Qwen2.5-Coder-1.5B-Q8_0.gguf
